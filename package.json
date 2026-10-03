@@ -1,0 +1,14 @@
+{
+  "name": "lab-api-gateway-grupo4",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pruebas automatizadas del laboratorio de API Gateway",
+  "scripts": {
+    "test:funcional": "newman run pruebas/coleccion-gateway.postman_collection.json -e pruebas/ambiente-local.postman_environment.json --folder 1-Funcional --folder 3-Timeout -r cli,htmlextra --reporter-htmlextra-export evidencias/reporte-funcional.html",
+    "test:falla": "newman run pruebas/coleccion-gateway.postman_collection.json -e pruebas/ambiente-local.postman_environment.json --folder 2-Servicio-caido -r cli,htmlextra --reporter-htmlextra-export evidencias/reporte-servicio-caido.html"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}

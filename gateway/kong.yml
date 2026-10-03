@@ -1,0 +1,57 @@
+# Configuración declarativa de Kong (modo DB-less) — Grupo 4
+# Todo el comportamiento del gateway está en este archivo.
+_format_version: "3.0"
+
+services:
+  # ---------- Servicio de Productos ----------
+  - name: productos-service
+    url: http://productos:3001        # nombre del contenedor en la red de Docker
+    connect_timeout: 2000             # ms para abrir conexión
+    read_timeout: 3000                # ms máximos esperando respuesta → si se supera: 504
+    write_timeout: 3000
+    retries: 0                        # sin reintentos, para que la falla sea visible
+    routes:
+      - name: ruta-productos
+        paths: ["/api/productos"]
+        methods: ["GET"]              # solo lectura
+        strip_path: true              # /api/productos/2  →  /2 en el servicio
+    plugins:
+      - name: rate-limiting           # control de tráfico (caso CP-10)
+        config:
+          second: 5
+          policy: local
+
+  # ---------- Servicio de Pedidos ----------
+  - name: pedidos-service
+    url: http://pedidos:3002
+    connect_timeout: 2000
+    read_timeout: 3000
+    write_timeout: 3000
+    retries: 0
+    routes:
+      - name: ruta-pedidos
+        paths: ["/api/pedidos"]
+        methods: ["GET", "POST"]
+        strip_path: true
+    plugins:
+      - name: request-size-limiting   # rechaza cuerpos mayores a 1 KB (413)
+        config:
+          allowed_payload_size: 1
+          size_unit: kilobytes
+
+# ---------- Plugins globales (aplican a todas las rutas) ----------
+plugins:
+  - name: key-auth                    # exige header "apikey" → sin él: 401
+    config:
+      key_names: ["apikey"]
+      hide_credentials: true          # el servicio nunca ve la clave
+  - name: correlation-id              # agrega X-Request-ID para trazar la solicitud
+    config:
+      header_name: X-Request-ID
+      echo_downstream: true
+
+# ---------- Consumidor autorizado (dato de prueba) ----------
+consumers:
+  - username: app-grupo4
+    keyauth_credentials:
+      - key: clave-grupo4-2026

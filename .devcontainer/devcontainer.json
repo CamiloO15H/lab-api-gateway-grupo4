@@ -1,0 +1,21 @@
+// Entorno para GitHub Codespaces — Grupo 4
+// Trae Docker y Node listos; al abrir el Codespace se instalan Newman y se levanta el laboratorio.
+{
+  "name": "lab-api-gateway-grupo4",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8000, 8001],
+  "portsAttributes": {
+    "8000": { "label": "Gateway (Kong proxy)" },
+    "8001": { "label": "Kong Admin API" }
+  },
+  "postCreateCommand": "npm install",
+  "postStartCommand": "docker compose up -d --build",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-azuretools.vscode-containers"]
+    }
+  }
+}

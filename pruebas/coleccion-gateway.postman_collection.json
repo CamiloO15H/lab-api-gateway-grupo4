@@ -1,0 +1,449 @@
+{
+  "info": {
+    "_postman_id": "6811068d-3eae-4f3e-8e5d-e64949331ba0",
+    "name": "Grupo 4 - Pruebas API Gateway (Kong)",
+    "description": "Casos automatizados del laboratorio de API Gateway.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1-Funcional",
+      "item": [
+        {
+          "name": "CP-01 Enrutamiento a Productos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-01 El gateway responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"CP-01 La respuesta viene del servicio Productos (lista con nombre y precio)\", () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(data[0]).to.have.all.keys('id','nombre','precio','stock');",
+                  "});",
+                  "pm.test(\"CP-01 El gateway agregó el X-Request-ID de trazabilidad\", () => pm.response.to.have.header('X-Request-ID'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-02 Enrutamiento a Pedidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-02 El gateway responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"CP-02 La respuesta viene del servicio Pedidos (arreglo)\", () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test(\"CP-02 El gateway identifica la latencia del upstream\", () => pm.response.to.have.header('X-Kong-Upstream-Latency'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-03 Solicitud sin API key es rechazada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-03 El gateway responde 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"CP-03 El mensaje lo genera Kong (no el servicio)\", () => {",
+                  "  pm.expect(pm.response.json().message).to.match(/API key/i);",
+                  "  pm.response.to.not.have.header('X-Kong-Upstream-Latency'); // nunca llegó al servicio",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-04 Ruta no registrada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-04 El gateway responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"CP-04 Kong indica que ninguna ruta coincide\", () => pm.expect(pm.response.json().message).to.match(/no Route matched/i));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/clientes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-05 Pedido con datos invalidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-05 Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"CP-05 Error DATOS_INVALIDOS propagado a través del gateway\", () => pm.expect(pm.response.json().error).to.eql('DATOS_INVALIDOS'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"productoId\": 1, \"cantidad\": 0}"
+            }
+          }
+        },
+        {
+          "name": "CP-06 Pedido de producto inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-06 Responde 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"CP-06 Error PRODUCTO_NO_EXISTE (Pedidos consultó a Productos)\", () => pm.expect(pm.response.json().error).to.eql('PRODUCTO_NO_EXISTE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"productoId\": 99, \"cantidad\": 1}"
+            }
+          }
+        },
+        {
+          "name": "CP-07a Flujo completo - crear pedido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-07 Pedido creado (201)\", () => pm.response.to.have.status(201));",
+                  "const p = pm.response.json();",
+                  "pm.test(\"CP-07 Total calculado con el precio de Productos (2 x 180000)\", () => pm.expect(p.total).to.eql(360000));",
+                  "pm.collectionVariables.set('pedidoId', p.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"productoId\": 1, \"cantidad\": 2}"
+            }
+          }
+        },
+        {
+          "name": "CP-07b Flujo completo - consultar pedido creado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-07 El pedido se consulta a través del gateway (200)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"CP-07 Los datos coinciden con el pedido creado\", () => {",
+                  "  const p = pm.response.json();",
+                  "  pm.expect(p.id).to.eql(Number(pm.collectionVariables.get('pedidoId')));",
+                  "  pm.expect(p.estado).to.eql('CREADO');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "{{pedidoId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2-Servicio-caido",
+      "item": [
+        {
+          "name": "CP-08a Servicio Pedidos caido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Precondición: docker compose stop pedidos",
+                  "pm.test(\"CP-08 El gateway responde con error de upstream (502/503/504)\", () => pm.expect(pm.response.code).to.be.oneOf([502,503,504]));",
+                  "pm.test(\"CP-08 La respuesta es un mensaje controlado de Kong, no un cuelgue\", () => {",
+                  "  pm.expect(pm.response.json()).to.have.property('message');",
+                  "  pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-08b Productos sigue disponible (aislamiento)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-08 La caída de Pedidos NO afecta a Productos (200)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3-Timeout",
+      "item": [
+        {
+          "name": "CP-09 Timeout del servicio Productos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CP-09 El gateway corta la espera y responde 504\", () => pm.response.to.have.status(504));",
+                  "pm.test(\"CP-09 Corta en ~3 s (read_timeout), no espera los 5 s del servicio\", () => pm.expect(pm.response.responseTime).to.be.below(4500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos?demoraMs=5000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "demoraMs",
+                  "value": "5000"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "pedidoId",
+      "value": ""
+    }
+  ]
+}

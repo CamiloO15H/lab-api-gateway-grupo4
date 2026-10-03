@@ -1,0 +1,8 @@
+{
+  "name": "servicio-productos",
+  "version": "1.0.0",
+  "description": "Servicio de productos - Laboratorio API Gateway Grupo 4",
+  "main": "app.js",
+  "scripts": { "start": "node app.js" },
+  "dependencies": { "express": "^4.21.2" }
+}

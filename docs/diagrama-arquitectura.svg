@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 530" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1F3864"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="530" fill="#ffffff"/>
+  <text x="500" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#1F3864">Arquitectura del laboratorio — API Gateway (Grupo 4)</text>
+
+  <!-- Cliente -->
+  <rect x="40" y="220" width="170" height="100" rx="10" fill="#EEF2F8" stroke="#1F3864" stroke-width="2"/>
+  <text x="125" y="258" text-anchor="middle" font-size="17" font-weight="bold" fill="#1F3864">Cliente</text>
+  <text x="125" y="282" text-anchor="middle" font-size="13" fill="#333">Postman / Newman</text>
+  <text x="125" y="300" text-anchor="middle" font-size="13" fill="#333">curl / scripts</text>
+
+  <line x1="210" y1="270" x2="318" y2="270" stroke="#1F3864" stroke-width="2.5" marker-end="url(#a)"/>
+  <text x="264" y="258" text-anchor="middle" font-size="12" fill="#1F3864">HTTP :8000</text>
+  <text x="264" y="292" text-anchor="middle" font-size="11" fill="#555">header apikey</text>
+
+  <!-- Red docker -->
+  <rect x="300" y="70" width="670" height="410" rx="14" fill="none" stroke="#8FA3C4" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="320" y="95" font-size="13" fill="#5A6E92">Red interna de Docker Compose (los servicios no exponen puertos)</text>
+
+  <!-- Gateway -->
+  <rect x="320" y="130" width="270" height="280" rx="12" fill="#1F3864"/>
+  <text x="455" y="165" text-anchor="middle" font-size="19" font-weight="bold" fill="#fff">KONG API GATEWAY</text>
+  <text x="455" y="186" text-anchor="middle" font-size="12" fill="#C9D4E8">modo DB-less · kong.yml</text>
+  <g font-size="13" fill="#fff">
+    <text x="342" y="222">Rutas</text>
+    <text x="352" y="242" fill="#DDE5F2">/api/productos → productos</text>
+    <text x="352" y="260" fill="#DDE5F2">/api/pedidos → pedidos</text>
+    <text x="342" y="292">Plugins</text>
+    <text x="352" y="312" fill="#DDE5F2">key-auth → 401</text>
+    <text x="352" y="330" fill="#DDE5F2">rate-limiting (5/s) → 429</text>
+    <text x="352" y="348" fill="#DDE5F2">request-size-limiting → 413</text>
+    <text x="352" y="366" fill="#DDE5F2">correlation-id (X-Request-ID)</text>
+    <text x="342" y="394" fill="#FFD966">timeout 3 s → 504 · sin ruta → 404</text>
+  </g>
+
+  <!-- Productos -->
+  <rect x="720" y="130" width="220" height="110" rx="10" fill="#E2EFDA" stroke="#548235" stroke-width="2"/>
+  <text x="830" y="166" text-anchor="middle" font-size="17" font-weight="bold" fill="#375623">Servicio Productos</text>
+  <text x="830" y="190" text-anchor="middle" font-size="13" fill="#333">Node.js + Express · :3001</text>
+  <text x="830" y="212" text-anchor="middle" font-size="12" fill="#555">GET / · GET /:id · /health</text>
+
+  <!-- Pedidos -->
+  <rect x="720" y="310" width="220" height="110" rx="10" fill="#FCE4D6" stroke="#C55A11" stroke-width="2"/>
+  <text x="830" y="346" text-anchor="middle" font-size="17" font-weight="bold" fill="#843C0C">Servicio Pedidos</text>
+  <text x="830" y="370" text-anchor="middle" font-size="13" fill="#333">Node.js + Express · :3002</text>
+  <text x="830" y="392" text-anchor="middle" font-size="12" fill="#555">POST / · GET / · GET /:id</text>
+
+  <line x1="590" y1="200" x2="716" y2="185" stroke="#1F3864" stroke-width="2.5" marker-end="url(#a)"/>
+  <text x="652" y="180" text-anchor="middle" font-size="12" fill="#1F3864">PI-2</text>
+  <line x1="590" y1="340" x2="716" y2="360" stroke="#1F3864" stroke-width="2.5" marker-end="url(#a)"/>
+  <text x="652" y="338" text-anchor="middle" font-size="12" fill="#1F3864">PI-3</text>
+  <line x1="830" y1="308" x2="830" y2="244" stroke="#C55A11" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#a)"/>
+  <text x="820" y="272" text-anchor="end" font-size="12" fill="#843C0C">PI-4 precio/stock</text>
+  <text x="222" y="245" font-size="12" fill="#1F3864">PI-1</text>
+
+  <text x="500" y="515" text-anchor="middle" font-size="12" fill="#555">PI = punto de integración validado por los casos de prueba (ver estrategia de pruebas)</text>
+</svg>
