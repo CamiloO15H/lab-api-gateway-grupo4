@@ -2,7 +2,8 @@
 // Trae Docker y Node listos; al abrir el Codespace se instalan Newman y se levanta el laboratorio.
 {
   "name": "lab-api-gateway-grupo4",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  // bookworm fijo: en Debian trixie la feature docker-in-docker (moby) no instala
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20-bookworm",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
