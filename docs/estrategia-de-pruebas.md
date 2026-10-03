@@ -107,34 +107,48 @@ Cumplimiento de la guía: casos exitosos (CP-01, CP-02, CP-07), datos inválidos
 
 ---
 
-## 13. Análisis de resultados *(completar después de ejecutar)*
+## 13. Análisis de resultados
+
+Ejecución del 2 de octubre de 2026 en Windows con Docker Desktop, Kong 3.9.3 y Newman. **10 de 10 casos aprobados**; 1 hallazgo registrado (H-01).
 
 | ID | Resultado obtenido | Estado | Evidencia |
 |---|---|---|---|
-| CP-01 | | | reporte-funcional.html |
-| CP-02 | | | reporte-funcional.html |
-| CP-03 | | | reporte-funcional.html + log-servicios.txt (no aparece la solicitud) |
-| CP-04 | | | reporte-funcional.html |
-| CP-05 | | | reporte-funcional.html |
-| CP-06 | | | reporte-funcional.html |
-| CP-07 | | | reporte-funcional.html |
-| CP-08 | Código real observado: ___ | | reporte-servicio-caido.html + log-gateway.txt |
-| CP-09 | Tiempo real observado: ___ ms | | reporte-funcional.html |
-| CP-10 | 200: ___ / 429: ___ | | resultado-rate-limit.txt |
+| CP-01 | 200 OK en 264 ms; 3 productos; cabecera X-Request-ID presente | Aprobado | reporte-funcional.html |
+| CP-02 | 200 OK en 169 ms; arreglo vacío (aún sin pedidos); X-Kong-Upstream-Latency presente | Aprobado | reporte-funcional.html |
+| CP-03 | 401 en 20 ms, "No API key found in request"; el log de Productos no registra la solicitud | Aprobado | reporte-funcional.html + log-servicios.txt |
+| CP-04 | 404, "no Route matched with those values"; sin X-Powered-By ni X-Kong-Upstream-Latency | Aprobado | reporte-funcional.html |
+| CP-05 | 400 DATOS_INVALIDOS propagado por el gateway | Aprobado | reporte-funcional.html |
+| CP-06 | 422 PRODUCTO_NO_EXISTE; Pedidos consultó a Productos (404) y lo tradujo | Aprobado | reporte-funcional.html + log-servicios.txt |
+| CP-07 | 201 con total 360000 y estado CREADO; luego 200 con el mismo pedido | Aprobado | reporte-funcional.html |
+| CP-08 | 504 en 2,09 s (connect_timeout) y Productos en 200; recuperación correcta. Ver H-01 | Aprobado (tras H-01) | reporte-servicio-caido.html + log-gateway.txt |
+| CP-09 | 504 en 3,03 s; Kong cortó en el read_timeout sin esperar los 5 s | Aprobado | reporte-funcional.html |
+| CP-10 | 200 ×5 y 429 ×5 | Aprobado | resultado-rate-limit.txt |
 
-**Preguntas guía para la interpretación:**
-- En CP-03, ¿por qué es importante que el log de Productos **no** muestre la solicitud? (El gateway protege a los servicios: la validación ocurre en el borde.)
-- En CP-08, ¿qué código devolvió Kong y qué significa? (502 = respuesta inválida o conexión rechazada; 503 = no pudo resolver o no hay destino disponible; 504 = no respondió a tiempo.)
-- En CP-09, ¿qué pasaría sin `read_timeout`? (El cliente quedaría esperando lo que tarde el servicio; con muchos clientes se agotan conexiones.)
-- ¿Qué defectos o hallazgos encontraron durante el montaje y cómo los corrigieron? (Registrar aquí cualquier falla real: es parte de la gestión de defectos.)
+Totales de Newman: corrida funcional 9 solicitudes, 20 aserciones, 0 fallidas (3,8 s); corrida de servicio caído 2 solicitudes, 3 aserciones, 0 fallidas.
 
-## 14. Conclusiones *(borrador para ajustar con los resultados reales)*
+### Hallazgos y gestión de defectos
 
-1. El gateway centraliza controles transversales (autenticación, límite de tráfico, timeouts, trazabilidad) que de otro modo tendría que implementar cada servicio.
-2. Las validaciones del gateway ocurren **antes** de llegar a los servicios, lo que se evidencia en los logs (CP-03, CP-04).
-3. El gateway aísla las fallas: la caída de Pedidos no afectó a Productos (CP-08).
-4. Los timeouts configurados convierten una espera indefinida en un error rápido y controlado (CP-09).
-5. El gateway es también un punto único de falla: en producción necesitaría réplicas y monitoreo; eso quedó fuera del alcance.
+| ID | Descripción | Causa | Severidad | Tratamiento |
+|---|---|---|---|---|
+| H-01 | En la primera ejecución de CP-08, Kong respondió 503 "name resolution failed" en 12,08 s, por encima del criterio de 5 s | Al detener el contenedor, el DNS interno de Docker deja de resolver `pedidos`; Kong espera al resolvedor DNS antes de fallar | Media: el cliente espera 12 s ante una caída | Registrado. En la repetición respondió 504 en 2,09 s (IP en caché, corta el connect_timeout). Mejora propuesta: ajustar los tiempos del resolvedor DNS de Kong |
+| H-02 | En un bucle manual de CP-10 salió 200 ×5, 429 ×3, 200 ×2 | El bucle con curl.exe tardó más de 1 s y abrió una nueva ventana de conteo | No es defecto | Se usa el script automatizado, que envía las 10 solicitudes dentro del mismo segundo |
+| H-03 | El log del gateway muestra solicitudes ajenas (`/notifications/unread-count` → 404) | Otra aplicación abierta en el navegador (localhost:3000) llamaba al puerto 8000 | No es defecto del laboratorio | Cerrar otras aplicaciones antes de la demo. Muestra que Kong rechaza con 404 cualquier ruta no configurada |
+
+### Interpretación
+
+- **El gateway valida en el borde.** En CP-03 y CP-04 la respuesta no trae `X-Kong-Upstream-Latency` y el servicio no registra la solicitud: Kong respondió sin consultar a nadie.
+- **Errores de negocio vs. errores del gateway.** Los 400 y 422 (CP-05, CP-06) los genera el servicio y el gateway solo los propaga; los 401, 404, 429, 503 y 504 los genera Kong.
+- **Las fallas quedan aisladas.** Con Pedidos caído, Productos siguió respondiendo 200 (CP-08).
+- **Los timeouts convierten una espera en un error rápido.** CP-09 cortó en 3 s, y CP-08 en 2 s cuando la IP estaba en caché. H-01 muestra que la resolución DNS es un tiempo que la configuración del laboratorio no controlaba.
+- **Tráfico interno vs. externo.** En el log de Productos, las consultas que hace Pedidos aparecen con `consumidor=-`: no pasan por el gateway. El gateway controla el tráfico que entra desde afuera (norte-sur); la comunicación entre servicios (este-oeste) va por la red interna.
+
+## 14. Conclusiones
+
+1. El API Gateway cumple su función de punto único de entrada: enrutó correctamente a los dos servicios y reescribió las rutas (CP-01, CP-02, CP-07).
+2. Los controles transversales (autenticación, límite de tráfico, timeouts, trazabilidad) quedaron en un solo archivo de configuración y no en el código de cada servicio.
+3. Las validaciones del gateway ocurren antes de llegar a los servicios, y eso se pudo verificar con los logs, no solo con el código de respuesta.
+4. El gateway aísla las fallas, pero el tiempo de respuesta ante una caída depende de detalles de infraestructura como el DNS (H-01). Por eso las fallas técnicas se deben probar más de una vez.
+5. El gateway es también un punto único de falla. En producción necesitaría réplicas, monitoreo y pruebas de carga, que quedaron fuera del alcance.
 
 ## 15. Referencias
 

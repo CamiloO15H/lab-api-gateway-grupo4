@@ -1,4 +1,4 @@
-# CP-10: envía 10 solicitudes seguidas; el gateway permite 5 por segundo.
+﻿# CP-10: envía 10 solicitudes seguidas; el gateway permite 5 por segundo.
 # Resultado esperado: las primeras ~5 responden 200 y las demás 429.
 $resultados = @()
 1..10 | ForEach-Object {

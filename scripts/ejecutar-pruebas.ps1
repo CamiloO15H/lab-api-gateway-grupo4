@@ -1,4 +1,4 @@
-# Ejecuta TODA la suite de pruebas del laboratorio (Windows / PowerShell)
+﻿# Ejecuta TODA la suite de pruebas del laboratorio (Windows / PowerShell)
 # Uso (desde la raíz del proyecto):  .\scripts\ejecutar-pruebas.ps1
 $ErrorActionPreference = "Continue"
 
